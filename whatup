@@ -1,2 +1,0 @@
-#!/bin/sh
-tail -n 1000 -f /var/log/system.log

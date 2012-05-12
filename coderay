@@ -3,8 +3,6 @@
 require 'rubygems'
 require 'coderay'
 
+# TODO accept either a file or text (eg. piped)
 code = $stdin.readlines * ''
 puts CodeRay.scan(code, :ruby).div(:class => :css)
-
-
-

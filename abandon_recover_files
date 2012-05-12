@@ -1,9 +1,0 @@
-#!/bin/sh
-# 
-# find and destroy emacs recovery and backup files, because Chris'
-# laptop keeps beachballing
-
-find . -name '\#*\#' -exec rm {} \;
-find . -name '*~' -exec rm {} \;
-
-
