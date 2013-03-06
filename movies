@@ -1,0 +1,111 @@
+#!/usr/bin/env ruby
+
+#
+# movies
+#
+# Created by Quintis Venter on 2012-06-10.
+# Copyright 2012 Loopy Logic. All rights reserved.
+#
+# Purpose: List movies matching the specified pattern.
+#          Changelog at bottom of file.
+#
+
+class String
+  def to_regexp
+    Regexp.new(self, true)
+  end
+end
+
+# ----------------------------------------------------------------------------
+# Config & Helpers
+# ----------------------------------------------------------------------------
+
+NAME_WIDTH = 55
+YEAR_WIDTH = 5
+EXT_WIDTH  = 5
+SIZE_WIDTH = 7
+PATTERNS   = {
+  :year       => /\((\d{4})\)/,
+  :extension  => /\.(\w+)$/,
+  :file_name  => /([\w\s-]*)?/,
+  :default    => /.*/
+}
+FORMATS    = %w( avi divx mpeg mpg xvid mp4 mkv )
+
+
+class String
+  def to_regexp   # used by Regex.try_convert
+    Regexp.new(self, true)
+  end
+end
+
+def movie_name(name)
+  movie = file_name(name)
+  movie.gsub ' - ', ': '
+end
+
+def file_name(file)
+  # puts "Passed in: #{file}"
+  # puts File.directory? file
+  # unless File.directory?(file)
+  if file =~ PATTERNS[:file_name] and !File.directory?(file)
+    return $1 unless $1.length > NAME_WIDTH
+    return $1[0..NAME_WIDTH - 4] + "..."
+  end
+  # puts "Filename: #{file}"
+  file
+end
+
+def file_extension(file)
+  return $1 if file =~ PATTERNS[:extension]
+end
+
+def file_year(file)
+  return $1 if file =~ PATTERNS[:year]
+  '----'
+end
+
+def file_size(size)
+  size / 1024 / 1024
+end
+
+def print_header arr, re
+  print "\n#{arr.count}"
+  if ARGV.count > 0
+    puts " match(es) for #{re}"
+  else
+    puts " match(es).\n(No arguments given, defaulting to #{PATTERNS[:default]})"
+  end
+  puts
+end
+
+# ----------------------------------------------------------------------------
+# Work
+# ----------------------------------------------------------------------------
+
+require 'date'
+
+# regexp = ARGV.count == 1 ? Regexp.try_convert(ARGV[0]) : /\((#{DateTime.now.year})\)/i
+regexp = ARGV.count == 1 ? Regexp.try_convert(ARGV[0]) : PATTERNS[:default]
+movies = []
+
+Dir.glob('/Volumes/Media/Movies/**/*').each do |file|
+  movies << file if regexp =~ file and !File.directory?(file) and FORMATS.include?(file_extension(file))
+end
+
+movies.select! { |movie| file_size(File.size(movie)) < 900 and !movie.index(/\[\d{3,4}p\]/) and !movie.index(/[mp4|mkv]$/) }
+
+print_header movies, regexp
+puts "%-#{NAME_WIDTH}s | %-#{YEAR_WIDTH}s | %-#{EXT_WIDTH}s | %#{SIZE_WIDTH}s" % ["Name", "Year", "Ext", "Size"]
+puts "-" * (NAME_WIDTH + YEAR_WIDTH + EXT_WIDTH + SIZE_WIDTH + 9)
+movies.each do |m|
+  puts "%-#{NAME_WIDTH}s | %-#{YEAR_WIDTH}s | %-#{EXT_WIDTH}s | %#{SIZE_WIDTH}s" % [movie_name(File.basename(m)), file_year(m), file_extension(m), "#{file_size(File.size(m))} MB"]
+end
+puts
+
+# ----------------------------------------------------------------------------
+# TODO
+# ----------------------------------------------------------------------------
+# TODO accept attribute limits as cli arguments
+# TODO summarize size and make its scale dynamic
+# CHANGED parameterize display widths
