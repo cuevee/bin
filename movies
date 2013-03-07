@@ -99,7 +99,8 @@ print_header movies, regexp
 puts "%-#{NAME_WIDTH}s | %-#{YEAR_WIDTH}s | %-#{EXT_WIDTH}s | %#{SIZE_WIDTH}s" % ["Name", "Year", "Ext", "Size"]
 puts "-" * (NAME_WIDTH + YEAR_WIDTH + EXT_WIDTH + SIZE_WIDTH + 9)
 movies.each do |m|
-  puts "%-#{NAME_WIDTH}s | %-#{YEAR_WIDTH}s | %-#{EXT_WIDTH}s | %#{SIZE_WIDTH}s" % [movie_name(File.basename(m)), file_year(m), file_extension(m), "#{file_size(File.size(m))} MB"]
+  puts "%-#{NAME_WIDTH}s | %-#{YEAR_WIDTH}s | %-#{EXT_WIDTH}s | %#{SIZE_WIDTH}s" %
+    [movie_name(File.basename(m)), file_year(m), file_extension(m), "#{file_size(File.size(m))} MB"]
 end
 puts
 
