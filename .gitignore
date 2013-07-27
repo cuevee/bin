@@ -1,2 +1,7 @@
 .wattrc
 *.sublime-*
+go
+gocode
+godoc
+gofmt
+tm
