@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+
+GLYPHS  = [*0..9] + [*'A'..'F']
+OPTIONS = {
+  chars_per_code: 8,
+  codes_per_line: 12,
+  line_display_sleep_time: ARGV[0].to_f || 0.1
+}
+
+def generate_code(length)
+  GLYPHS.sample(length).join ''
+end
+
+def start(sleep_time)
+  loop do
+    line = ""
+    OPTIONS[:codes_per_line].times do
+      line << "#{generate_code(OPTIONS[:chars_per_code])} "
+    end
+    puts line
+    sleep sleep_time
+  end
+end
+
+start OPTIONS[:line_display_sleep_time]
