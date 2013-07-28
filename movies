@@ -20,18 +20,20 @@ end
 # Config & Helpers
 # ----------------------------------------------------------------------------
 
-NAME_WIDTH = 55
-YEAR_WIDTH = 5
-EXT_WIDTH  = 5
-SIZE_WIDTH = 7
-PATTERNS   = {
-  :year       => /\((\d{4})\)/,
-  :extension  => /\.(\w+)$/,
-  :file_name  => /([\w\s-]*)?/,
-  :default    => /.*/
+OPTS = {
+  media_dirs: ['/Volumes/media/movies', "ENV['HOME']/Movies"]
+  name_width: 55,
+  year_width: 5,
+  ext_width: 5,
+  size_width: 7,
+  patterns: {
+    :year       => /\((\d{4})\)/,
+    :extension  => /\.(\w+)$/,
+    :file_name  => /([\w\s-]*)?/,
+    :default    => /.*/
+  },
+  formats: %w( avi divx mpeg mpg xvid mp4 mkv )
 }
-FORMATS    = %w( avi divx mpeg mpg xvid mp4 mkv )
-
 
 class String
   def to_regexp   # used by Regex.try_convert
@@ -45,19 +47,19 @@ def movie_name(name)
 end
 
 def file_name(file)
-  if file =~ PATTERNS[:file_name] and !File.directory?(file)
-    return $1 unless $1.length > NAME_WIDTH
-    return $1[0..NAME_WIDTH - 4] + "..."
+  if file =~ OPTS[:patterns][:file_name] and !File.directory?(file)
+    return $1 unless $1.length > OPTS[:name_width]
+    return $1[0..OPTS[:name_width] - 4] + "..."
   end
   file
 end
 
 def file_extension(file)
-  return $1 if file =~ PATTERNS[:extension]
+  return $1 if file =~ OPTS[:patterns][:extension]
 end
 
 def file_year(file)
-  return $1 if file =~ PATTERNS[:year]
+  return $1 if file =~ OPTS[:patterns][:year]
   '----'
 end
 
@@ -70,7 +72,7 @@ def print_header arr, re
   if ARGV.count > 0
     puts " match(es) for #{re}"
   else
-    puts " match(es).\n(No arguments given, defaulting to #{PATTERNS[:default]})"
+    puts " match(es).\n(No arguments given, defaulting to #{OPTS[:patterns][:default]})"
   end
   puts
 end
@@ -81,20 +83,20 @@ end
 
 require 'date'
 
-regexp = ARGV.count == 1 ? Regexp.try_convert(ARGV[0]) : PATTERNS[:default]
+regexp = ARGV.count == 1 ? Regexp.try_convert(ARGV[0]) : OPTS[:patterns][:default]
 movies = []
 
 Dir.glob('/Volumes/Media/Movies/**/*').each do |file|
-  movies << file if regexp =~ file and !File.directory?(file) and FORMATS.include?(file_extension(file))
+  movies << file if regexp =~ file and !File.directory?(file) and OPTS[:formats].include?(file_extension(file))
 end
 
 movies.select! { |movie| file_size(File.size(movie)) < 900 and !movie.index(/\[\d{3,4}p\]/) and !movie.index(/[mp4|mkv]$/) }
 
 print_header movies, regexp
-puts "%-#{NAME_WIDTH}s | %-#{YEAR_WIDTH}s | %-#{EXT_WIDTH}s | %#{SIZE_WIDTH}s" % ["Name", "Year", "Ext", "Size"]
-puts "-" * (NAME_WIDTH + YEAR_WIDTH + EXT_WIDTH + SIZE_WIDTH + 9)
+puts "%-#{OPTS[:name_width]}s | %-#{OPTS[:year_width]}s | %-#{OPTS[:ext_width]}s | %#{OPTS[:size_width]}s" % ["Name", "Year", "Ext", "Size"]
+puts "-" * (OPTS[:name_width] + OPTS[:year_width] + OPTS[:ext_width] + OPTS[:size_width] + 9)
 movies.each do |m|
-  puts "%-#{NAME_WIDTH}s | %-#{YEAR_WIDTH}s | %-#{EXT_WIDTH}s | %#{SIZE_WIDTH}s" %
+  puts "%-#{OPTS[:name_width]}s | %-#{OPTS[:year_width]}s | %-#{OPTS[:ext_width]}s | %#{OPTS[:size_width]}s" %
     [movie_name(File.basename(m)), file_year(m), file_extension(m), "#{file_size(File.size(m))} MB"]
 end
 puts
@@ -102,6 +104,7 @@ puts
 # ----------------------------------------------------------------------------
 # TODO
 # ----------------------------------------------------------------------------
-# TODO accept attribute limits as cli arguments
+# TODO accept cli args for basic options hardcoded in the OPTS hash
+# TODO accept media attribute limits as cli arguments
 # TODO summarize size and make its scale dynamic
 # CHANGED parameterize display widths
