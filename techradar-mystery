@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+require 'csv'
+
+def show_wait_cursor(seconds,fps=10)
+  chars = %w[| / - \\]
+  delay = 1.0/fps
+  (seconds*fps).round.times{ |i|
+    print chars[i % chars.length]
+    sleep delay
+    print "\b"
+  }
+end
+
+number_of_talks = ARGV[0].to_i || 3
+data = CSV.read("#{Dir.home}/Downloads/techradar-mystery.csv")
+data.first << "Status"
+data[1..-1].map! { |item| item[3] = "✘".center(6) }
+
+def out(*cols, header:false)
+  puts '-' * 93 if header
+  puts "| %12s | %-50s | %-12s | %5s |" % cols
+  puts '-' * 93 if header
+end
+
+out *data.first, header: true
+data[1..-1].each do |row|
+  out *row unless row[2].nil?
+end
+
+puts 'Selected'.center(93, '-')
+number_of_talks.times do
+  show_wait_cursor(1.3)
+  item = *data[1..-1].reject { |item| item[2].nil? }.sample
+  out *item
+end
+puts '-' * 93
