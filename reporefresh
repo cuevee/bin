@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+BASE = File.join "#{ENV['HOME']}", "src"
+
+Dir.glob("#{BASE}/*/*", File::FNM_DOTMATCH) do |filename|
+  if filename.split('/')[-1] == '.git'
+    puts "Updating #{File.join(filename.split('/')[0..-2])}"
+    `cd #{filename} && cd .. && git pull`
+  end
+end
