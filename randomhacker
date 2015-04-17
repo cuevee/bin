@@ -2,9 +2,9 @@
 
 GLYPHS  = [*0..9] + [*'A'..'F']
 OPTIONS = {
-  chars_per_code: 8,
-  codes_per_line: 12,
-  line_display_sleep_time: ARGV[0].to_f || 0.1
+  chars_per_code: 16,
+  codes_per_line: 16,
+  line_display_sleep_time: ARGV[0].to_f || 0.9
 }
 
 def generate_code(length)
@@ -23,3 +23,4 @@ def start(sleep_time)
 end
 
 start OPTIONS[:line_display_sleep_time]
+
