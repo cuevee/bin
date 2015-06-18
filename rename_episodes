@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+
+$stdout.sync = true
+
+require 'nokogiri'
+require 'open-uri'
+
+BASE_URL = "http://epguides.com"
+
+class Episode
+  attr_accessor :show
+  attr_reader :filename, :title, :season_number, :episode_number
+
+  def initialize(filename)
+    @original_filename = filename
+    @filename = File.basename(filename).downcase
+    @filename =~ /s(\d{1,2})e(\d{1,2})/
+    @season_number = $1.to_i
+    @episode_number = $2.to_i
+    @title = nil
+    @show = nil
+  end
+
+  def show_search_name
+    show = @filename.sub "the.", ""
+    show.scan(/^(.*)?.+?[Ss]\d{1,2}[Ee]\d{1,2}/)[0]
+    $1.gsub!(".", "") if $1
+  end
+
+  def title=(title)
+    @title = title.gsub ":", " - "
+  end
+
+  def episode_selector
+    "season #{@season_number} episode #{@episode_number}"
+  end
+
+  def proper_filename
+    "#{File.dirname @original_filename}/#{show} [#{@season_number}x#{"%02d" % @episode_number}] #{title}#{File.extname @filename}"
+  end
+
+  def rename_on_disk
+    File.rename @original_filename, proper_filename
+    puts "Writing #{proper_filename}... done"
+  end
+
+  def to_s
+    @filename
+  end
+end
+
+data = Hash.new { |k, v| k[v] = [] }
+
+episodes = []
+Dir.glob("#{ENV['HOME']}/Downloads/torrents/*.{mp4,avi}")
+  .each { |file| episodes << Episode.new(file) if file =~ /[Ss](\d{1,2})[Ee](\d{1,2})/ }
+
+shows = episodes.map(&:show_search_name).uniq
+shows.each do |show_search_name|
+  page = Nokogiri::HTML(open(BASE_URL + "/#{show_search_name}"))
+  show_name = page.css('.headleft').css('h1 > a').text
+
+  episodes.select { |ep| ep.show_search_name == show_search_name }.each do |episode|
+    page.css('#eplist').css('a').select do |link|
+      episode.show = show_name
+      episode.title = link.text if link['title'] =~ /#{episode.episode_selector}/
+    end
+    data[show_name] << episode
+  end
+end
+
+data.values.flatten.each &:rename_on_disk
