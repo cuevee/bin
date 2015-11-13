@@ -52,7 +52,10 @@ end
 data = Hash.new { |k, v| k[v] = [] }
 
 episodes = []
-Dir.glob("#{ENV['HOME']}/Downloads/torrents/*.{mp4,avi}")
+
+target_dir = ARGV[0] || "#{ENV['HOME']}/Downloads/torrents"
+
+Dir.glob("#{target_dir}/*.{mp4,avi}")
   .each { |file| episodes << Episode.new(file) if file =~ /[Ss](\d{1,2})[Ee](\d{1,2})/ }
 
 shows = episodes.map(&:show_search_name).uniq
@@ -69,4 +72,4 @@ shows.each do |show_search_name|
   end
 end
 
-data.values.flatten.each &:rename_on_disk
+data.values.flatten.map &:rename_on_disk
