@@ -2,30 +2,34 @@
 
 set -e
 
-echo "Welcome! Give up your killercode creds, man, so I don't have to interrupt you.\n"
+echo "Welcome! Give up your gitlab creds so I don't have to interrupt you."
+echo
 
-echo "Username: \c"
+# Ask for gitlab creds to we don't need to later
+echo "Username:\c"
 read USERNAME
-echo "Password: \c"
+echo "Password:\c"
 read -s PASSWORD
 
-echo "Installing babushka..."
-sh -c "$(curl https://babushka.me/up)" < /dev/null
-echo "Done."
+# Install/update babushka
+if [[ -a /usr/local/bin/babushka ]]; then
+	babushka babushka
+else
+	sh -c "$(curl https://babushka.me/up)" < /dev/null
+fi
 
-echo "Installing hombrew..."
+# Clone/update babushka deps
+if [[ -d $HOME/.babushka/deps ]]; then
+	(cd $HOME/.babushka/deps && git pull)
+else
+	git clone https://github.com/cuevee/babushka-deps.git $HOME/.babushka/deps
+fi
+
+# Install homebrew
 babushka homebrew
-echo "Done."
 
-echo "Installing XCode Command Line Tools"
-if [[ ! -x /usr/bin/gcc ]; then
+# Install XCode CLI tools
+if [[ ! -x /usr/bin/gcc ]]; then
   echo "Info  | Install  | xcode"
   xcode-select --install
 fi
-echo "Done."
-
-# Modify the PATH
-export PATH=/usr/local/bin:$PATH
-
-echo "Cloning dotfiles"
-echo "Done."
