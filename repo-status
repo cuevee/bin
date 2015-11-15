@@ -3,6 +3,8 @@
 require "pathname"
 
 HOME = Pathname.new Dir.home
+
+# parameterize this
 PATHS = [
   ".dotfiles",
   ".dotfiles.private",
