@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+
+require "pathname"
+
+HOME = Pathname.new Dir.home
+PATHS = [
+  ".dotfiles",
+  ".dotfiles.private",
+  "bin",
+  "source"
+]
+STATS = Hash.new 0
+
+def git_repo? path
+  path.children.map(&:basename).map(&:to_s).include? ".git"
+end
+
+def is_dirty? path
+  `git status` =~ /working directory clean/
+end
+
+def walk path
+  if git_repo? path
+    Dir.chdir path
+    if is_dirty? path
+      STATS[:clean] += 1
+    else
+      STATS[:dirty] += 1
+      puts "#{path} is DIRTY"
+    end
+  else
+    path.children.select(&:directory?).each { |child| walk child }
+  end
+end
+
+PATHS.each do |dir|
+  walk HOME.join dir
+end
+
+p STATS
