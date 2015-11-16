@@ -1,42 +1,26 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env python
 
-require "pathname"
+#* vim: set filetype=python
 
-HOME = Pathname.new Dir.home
+import os
+from termcolor import colored
+from subprocess import check_output
 
-# parameterize this
-PATHS = [
-  ".dotfiles",
-  ".dotfiles.private",
-  "bin",
-  "source"
-]
-STATS = Hash.new 0
+home = os.path.expanduser('~')
+paths = []
+paths.append(os.path.join(home, 'source'))
+paths.append(os.path.join(home, 'bin'))
 
-def git_repo? path
-  path.children.map(&:basename).map(&:to_s).include? ".git"
-end
+longest_dir = 1
 
-def is_dirty? path
-  `git status` =~ /working directory clean/
-end
+for path in paths:
+    for root, dirs, files in os.walk(path):
+      if ".git" in dirs:
+          os.chdir(root)
+          if "working directory clean" in check_output(["git", "status"]):
+              color = "green"
+          else:
+              color = "red"
+          
+          print "%-5s %-35s %s" % (colored(u"\u2717", color), os.getcwd().split('/')[-1], os.getcwd())
 
-def walk path
-  if git_repo? path
-    Dir.chdir path
-    if is_dirty? path
-      STATS[:clean] += 1
-    else
-      STATS[:dirty] += 1
-      puts "#{path} is DIRTY"
-    end
-  else
-    path.children.select(&:directory?).each { |child| walk child }
-  end
-end
-
-PATHS.each do |dir|
-  walk HOME.join dir
-end
-
-p STATS
