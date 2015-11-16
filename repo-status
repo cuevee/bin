@@ -21,27 +21,34 @@ for path in args.paths:
     for root, dirs, files in os.walk(path):
         if ".git" in dirs:
             os.chdir(root)
-            if "working directory clean" in check_output(["git", "status"]):
+            result, _ = Popen("git status", shell=True, stdout=PIPE).communicate()
+            if "working directory clean" in result:
                 local = u"\u2713"
                 color = "green"
             else:
                 local = u"\u2718"
                 color = "red"
 
-            p1 = Popen(["git", "--no-pager", "diff", "--", "origin/master"], stdout=PIPE)
-            p2 = Popen(["wc", "-l"], stdin=p1.stdout, stdout=PIPE)
-            p3 = Popen(["tr", "-d", "' '"], stdin=p2.stdout, stdout=PIPE)
-            result = int(p2.communicate()[0])
-            if result == 0:
-                remote = u"\u2713"
+            result, _ = Popen("git remote", shell=True, stdout=PIPE).communicate()
+            if len(result) != 0:
+                FNULL = open(os.devnull, 'w')
+                p1 = Popen(["git", "--no-pager", "diff", "--diff-filter=M", "origin/master", "--", "."], stdout=PIPE, stderr=FNULL)
+                p2 = Popen(["wc", "-l"], stdin=p1.stdout, stdout=PIPE)
+                p3 = Popen(["tr", "-d", "' '"], stdin=p2.stdout, stdout=PIPE)
+                result = int(p3.communicate()[0])
+                if result == 0:
+                    result = u"{}".format(u"\u2713")
+                else:
+                    result = u"{} {}".format(u"\u2718", "{} lines".format(result))
             else:
-                remote = u"\u2718"
+                result = ""
+
             remote = result
-            
+
             columns = [os.getcwd().split('/')[-1], colored(local, color), colored(remote, color)]
             if args.verbose:
                 columns.append(root)
                 headers.append("Path")
             data.append(columns)
-            
+
 print tabulate(data, headers=headers, tablefmt="psql")
