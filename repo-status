@@ -16,9 +16,11 @@ for path in args.paths:
       if ".git" in dirs:
           os.chdir(root)
           if "working directory clean" in check_output(["git", "status"]):
+              symbol = u"\u2713"
               color = "green"
           else:
+              symbol = u"\u2717"
               color = "red"
           
-          print "%-5s %-35s %s" % (colored(u"\u2717", color), os.getcwd().split('/')[-1], os.getcwd())
+          print u"{:5} {:35} {}".format(colored(symbol, color), os.getcwd().split('/')[-1], os.getcwd())
 
