@@ -5,23 +5,43 @@
 import os
 import argparse
 from termcolor import colored
-from subprocess import check_output
+from subprocess import check_output, Popen, PIPE
+from tabulate import tabulate
 
 parser = argparse.ArgumentParser(description='Check the status of git repositories.')
+parser.add_argument("-v", "--verbose", action="store_true", help="Output the full path to the repo.")
 parser.add_argument("-x", "--exclude", default=[], help="The path(s) to recursively exclude from scanning)", nargs="?")
 parser.add_argument("paths", default=[os.getcwd()], help="The path(s) to scan (recursively until it hits a .git directory)", nargs="*")
 args = parser.parse_args()
+
+data = []
+headers = ["Repo", "Status", "Synced?"]
 
 for path in args.paths:
     for root, dirs, files in os.walk(path):
         if ".git" in dirs:
             os.chdir(root)
             if "working directory clean" in check_output(["git", "status"]):
-                symbol = u"\u2713"
+                local = u"\u2713"
                 color = "green"
             else:
-                symbol = u"\u2717"
+                local = u"\u2718"
                 color = "red"
-            
-            print u"{:5} {:35} {}".format(colored(symbol, color), os.getcwd().split('/')[-1], os.getcwd())
 
+            p1 = Popen(["git", "--no-pager", "diff", "--", "origin/master"], stdout=PIPE)
+            p2 = Popen(["wc", "-l"], stdin=p1.stdout, stdout=PIPE)
+            p3 = Popen(["tr", "-d", "' '"], stdin=p2.stdout, stdout=PIPE)
+            result = int(p2.communicate()[0])
+            if result == 0:
+                remote = u"\u2713"
+            else:
+                remote = u"\u2718"
+            remote = result
+            
+            columns = [os.getcwd().split('/')[-1], colored(local, color), colored(remote, color)]
+            if args.verbose:
+                columns.append(root)
+                headers.append("Path")
+            data.append(columns)
+            
+print tabulate(data, headers=headers, tablefmt="psql")
