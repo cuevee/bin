@@ -8,19 +8,20 @@ from termcolor import colored
 from subprocess import check_output
 
 parser = argparse.ArgumentParser(description='Check the status of git repositories.')
+parser.add_argument("-x", "--exclude", default=[], help="The path(s) to recursively exclude from scanning)", nargs="?")
 parser.add_argument("paths", default=[os.getcwd()], help="The path(s) to scan (recursively until it hits a .git directory)", nargs="*")
 args = parser.parse_args()
 
 for path in args.paths:
     for root, dirs, files in os.walk(path):
-      if ".git" in dirs:
-          os.chdir(root)
-          if "working directory clean" in check_output(["git", "status"]):
-              symbol = u"\u2713"
-              color = "green"
-          else:
-              symbol = u"\u2717"
-              color = "red"
-          
-          print u"{:5} {:35} {}".format(colored(symbol, color), os.getcwd().split('/')[-1], os.getcwd())
+        if ".git" in dirs:
+            os.chdir(root)
+            if "working directory clean" in check_output(["git", "status"]):
+                symbol = u"\u2713"
+                color = "green"
+            else:
+                symbol = u"\u2717"
+                color = "red"
+            
+            print u"{:5} {:35} {}".format(colored(symbol, color), os.getcwd().split('/')[-1], os.getcwd())
 
