@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+words = File.read("/usr/share/dict/words").split("\n")
+
+puts words.sample << words.sample
