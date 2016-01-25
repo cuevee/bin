@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+
+#* vim: set filetype=python
+
+import os
+import sys
+import argparse
+from termcolor import colored
+from subprocess import check_output, Popen, PIPE
+from os.path import expanduser
+
+parser = argparse.ArgumentParser(description='Check the status of git repositories.')
+parser.add_argument("-v", "--verbose", action="store_true", help="Output the full path to the repo.")
+parser.add_argument("-x", "--exclude", default=[], help="The path(s) to exclude from scanning)", nargs="?")
+parser.add_argument("paths", help="The path(s) to scan (recursively until it hits a .git directory)", nargs="*")
+args = parser.parse_args()
+
+if not args.paths:
+    parser.print_help()
+    sys.exit()
+
+
+def color_status(result):
+    if "working directory clean" in result:
+        return ("green", "clean")
+    else:
+        return ("red", "dirty")
+
+
+def check_remote():
+    git_remote, _ = Popen("git remote", shell=True, stdout=PIPE).communicate()
+    if len(git_remote) != 0:
+        FNULL = open(os.devnull, 'w')
+        diff = Popen(["git", "--no-pager", "diff", "--diff-filter=M", "origin/master", "--", "."], stdout=PIPE, stderr=FNULL)
+        lines = Popen(["wc", "-l"], stdin=diff.stdout, stdout=PIPE)
+        line_count = Popen(["tr", "-d", "' '"], stdin=lines.stdout, stdout=PIPE)
+        return int(line_count.communicate()[0])
+    else:
+        return 0
+
+
+def check_repo(path):
+    os.chdir(path)
+    repo_name = os.getcwd().replace(expanduser("~"), "~")
+    git_status, _ = Popen("git status", shell=True, stdout=PIPE).communicate()
+    color, status = color_status(git_status)
+    unsynced_lines = check_remote()
+
+    return (repo_name, status, unsynced_lines, color)
+
+
+def scan_path(path):
+    for root, dirs, _ in os.walk(path):
+        if ".git" in dirs:
+            repo_name, status, unsynced_lines, color = check_repo(root)
+            detail = colored("OK", "green")
+            comments = []
+
+            if status == "dirty": comments.append("uncommitted changes")
+            if unsynced_lines > 0: comments.append("%s unsynced lines" % unsynced_lines)
+            if len(comments) > 0: detail = colored("(%s)" % ", ".join(comments), "red")
+
+            line = "%s... %s" % (repo_name, detail)
+            print line
+
+
+try:
+    print "Scanning...\n"
+    for path in args.paths: scan_path(path)
+except KeyboardInterrupt:
+    sys.exit(0)
