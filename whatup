@@ -14,6 +14,7 @@ checkup 4567 "Sinatra"
 checkup 80 "HTTP/Common"
 checkup 8080 "HTTP/PHP"
 checkup 3000 "Rails/Webrick"
+checkup 5000 "Foreman/Phoenix"
 
 checkup 3306 "MySQL"
 checkup 5432 "PostGreSQL"
