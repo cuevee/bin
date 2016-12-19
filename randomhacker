@@ -1,10 +1,27 @@
 #!/usr/bin/env ruby
 
+require 'paint'
+
 GLYPHS  = [*0..9] + [*'A'..'F']
-OPTIONS = {
+OPTS = {
   chars_per_code: 16,
-  codes_per_line: 16,
-  line_display_sleep_time: ARGV[0].to_f || 0.9
+  codes_per_line: 8,
+  line_display_sleep_time: ARGV[0].to_f || 2.0
+}
+
+def shut_down
+  puts "cleaning up..."
+  puts "exiting..."
+  sleep(1)
+  exit
+end
+
+trap("INT") {
+  shut_down
+}
+
+trap("TERM") {
+  shut_down
 }
 
 def generate_code(length)
@@ -13,14 +30,20 @@ end
 
 def start(sleep_time)
   loop do
-    line = ""
-    OPTIONS[:codes_per_line].times do
-      line << "#{generate_code(OPTIONS[:chars_per_code])} "
+    OPTS[:codes_per_line].times do
+      if rand(10) == 5
+        print Paint["#{generate_code(OPTS[:chars_per_code])}", nil, :red] + " "
+      elsif rand(10) == 8
+        print Paint["#{generate_code(OPTS[:chars_per_code])}", :black, :green, :bright] + " "
+      else
+        print "#{generate_code(OPTS[:chars_per_code])} "
+      end
     end
-    puts line
-    sleep rand
+
+    puts
+    sleep rand(sleep_time)
   end
 end
 
-start OPTIONS[:line_display_sleep_time]
+start OPTS[:line_display_sleep_time]
 
