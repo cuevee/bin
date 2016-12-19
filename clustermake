@@ -1,47 +1,92 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-## Summary
-# This script is designed to get you up and running quickly with a Docker Swarm
-# and Visualizer in order to run through <placeholder> exercise quickly.
+# Purpose: Create a Swarm Mode cluster with a single master and a configurable
+# number of workers.
+# This script is a mirror of the following gist, which is used to
+# populate a Medium story. Unfortunately, there's no way to synchronize all
+# three
 #
-## References:
-# See blog post "Docker Kata 002 >>> Stamp out Clusters"
-# https://medium.com/@Jesse_White/docker-kata-002-a20f49249dca
-# 
-## Pre-requisites:
-# Docker Machine installed on your laptop
-# OSX
-# Docker for Mac
+# Medium: https://medium.com/contino-io/docker-kata-005-ac8429082f6c
+# Gist: https://gist.github.com/anonymuse/502e7bf5c7b67bb95a4250cdccbc5125
 
-# Set the machine names for later use in the script. You can change these if
-# you require fresh machines
+# Set global environment variables
+workers=${WORKERS:-"node01 node02 node03 node04"}
+master=master01
+swarm_port=2377
 
-master_node=master
-node01_node=node01
-node02_node=node02
-node03_node=node03
+# Creates a local Docker Machine VM
+# Arguments:
+#   $1: the name of the Docker Machine
+create_machine() {
+  docker-machine create \
+    -d virtualbox \
+    $1
+}
 
-# Initialize Virtualbox machines using Docker Machine
-for i in $master_node $node01_node $node02_node $node03_node; \
-do docker-machine create -d virtualbox $i; done
+# Function to save configuration loading while we switch Docker Machine
+# environment variables
+# Arguments:
+#   $@: the Docker engine commmand that we'll load into the configuration
+swarm_master() {
+  docker $master_conf $@
+}
 
-# Create the Docker swarm
-docker $(docker-machine config $master_node) swarm init \
---advertise-addr $(docker-machine ip $master_node):2377
+# The body of our script
+main() {
+  #
+  if [ -z "$WORKERS" ]; then
+    echo "Using default $workers. Set \$WORKERS environment variable to alter."
+  fi
 
-# Add workers to the Docker Swarm
-for i in $node01_node $node02_node $node03_node; \
-do docker $(docker-machine config $i) swarm join \
---token `docker $(docker-machine config $master_node) swarm join-token worker -q` \
-$(docker-machine ip $master_node):2377; done
+  # Create your master node
+  echo "Creating master node"
+  create_machine $master
 
-docker service create \
-  --name=viz \
-  --publish=8080:8080/tcp \
-  --constraint=node.role==manager \
-  --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
-  manomarks/visualizer
+  # Derive useful variables for Swarm setup
+  master_ip=$(docker-machine ip ${master})
+  master_conf=$(docker-machine config ${master})
 
-echo "Your available machines:"
-echo "============"
-docker-machine ls -q
+  # Initialize the swarm mode
+  echo "Initializing the swarm mode"
+  swarm_master swarm init --advertise-addr $master_ip
+
+  # Obtain the worker token
+  worker_token=$(docker ${master_conf} swarm join-token -q worker)
+  echo "Worker token: ${worker_token}"
+
+  # Create and join the workers
+  for worker in $workers; do
+    echo "Creating worker ${worker}"
+    create_machine $worker &
+  done
+  wait
+  for worker in $workers; do
+    worker_conf=$(docker-machine config ${worker})
+    echo "Node $worker information:"
+    docker $worker_conf swarm join --token $worker_token $master_ip:$swarm_port
+  done
+
+  swarm_master service create \
+    --name=viz \
+    --publish=8080:8080/tcp \
+    --constraint=node.role==manager \
+    --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
+    manomarks/visualizer
+
+
+  # Dsplay the cluster info
+  echo "====================="
+  echo "Cluster information"
+  echo "Discovery token: ${worker_token}"
+  echo "====================="
+  echo "Swarm manager setup:"
+  docker-machine env $master
+  echo "====================="
+  echo "Docker Machine cluster status"
+  docker-machine ls
+  echo "====================="
+  echo "Docker Swarm node status"
+  swarm_master node ls
+
+}
+main $@
