@@ -1,40 +1,47 @@
 #!/bin/bash
-# 
-## Summary
-# This script is designed to get you up and running quickly with a Docker Swarm and Visualizer
-# in order to run through <placeholder> exercise quickly. 
 #
+## Summary
+# This script is designed to get you up and running quickly with a Docker Swarm
+# and Visualizer in order to run through <placeholder> exercise quickly.
+#
+## References:
+# See blog post "Docker Kata 002 >>> Stamp out Clusters"
+# https://medium.com/@Jesse_White/docker-kata-002-a20f49249dca
+# 
 ## Pre-requisites:
 # Docker Machine installed on your laptop
 # OSX
 # Docker for Mac
 
-# Set the machine names for later use in the script. You can change these if you require
-# fresh machines
+# Set the machine names for later use in the script. You can change these if
+# you require fresh machines
 
 master_node=master
 node01_node=node01
 node02_node=node02
+node03_node=node03
 
 # Initialize Virtualbox machines using Docker Machine
-for i in $master_node $node01_node $node02_node; do docker-machine create -d virtualbox $i; done
+for i in $master_node $node01_node $node02_node $node03_node; \
+do docker-machine create -d virtualbox $i; done
 
 # Create the Docker swarm
 docker $(docker-machine config $master_node) swarm init \
 --advertise-addr $(docker-machine ip $master_node):2377
 
 # Add workers to the Docker Swarm
-docker $(docker-machine config $node01_node) swarm join \
+for i in $node01_node $node02_node $node03_node; \
+do docker $(docker-machine config $i) swarm join \
 --token `docker $(docker-machine config $master_node) swarm join-token worker -q` \
-$(docker-machine ip $master_node):2377
+$(docker-machine ip $master_node):2377; done
 
-docker $(docker-machine config $node02_node) swarm join \
---token `docker $(docker-machine config $master_node) swarm join-token worker -q` \
-$(docker-machine ip $master_node):2377
+docker service create \
+  --name=viz \
+  --publish=8080:8080/tcp \
+  --constraint=node.role==manager \
+  --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
+  manomarks/visualizer
 
-# Run the Docker Swarm visualizer
-docker $(docker-machine config $master_node) run -it -d -p 5000:5000 \
--e HOST=`docker-machine ip $master_node` \
--e PORT=5000 \
--v /var/run/docker.sock:/var/run/docker.sock \
-manomarks/visualizer
+echo "Your available machines:"
+echo "============"
+docker-machine ls -q
