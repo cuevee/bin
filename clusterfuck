@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+## Summary
+# Kill the cluster created with the `clustermake` command
+
+docker-machine rm master node01 node02 node03
