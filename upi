@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+for image in `docker images | grep -v REPOSITORY | awk '{print $1":"$2}'`; do
+  echo "Pulling $image..." && \
+  docker pull $image;
+  echo
+done
