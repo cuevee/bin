@@ -5,4 +5,4 @@ set -e
 ## Summary
 # Kill the cluster created with the `clustermake` command
 
-docker-machine rm master node01 node02 node03
+docker-machine ls | grep -v NAME | awk '{print $1}' | xargs docker-machine rm -y
