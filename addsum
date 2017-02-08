@@ -1,6 +1,0 @@
-#!/usr/bin/env ruby
-sum = 0
-ARGF.each_line do |line|
-  sum += line.to_f
-end
-puts sum
