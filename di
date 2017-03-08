@@ -7,7 +7,6 @@ then
   shift;
 fi
 
-
 for image in `docker images | grep -v REPOSITORY | grep -v "<none>" | awk '{print $1":"$2}'`; do
   if (( LIST == 1 ))
   then
