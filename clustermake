@@ -67,19 +67,21 @@ main() {
     docker $worker_conf swarm join --token $worker_token $master_ip:$swarm_port
   done
 
-  # swarm_master service create \
-  #   --name=viz \
-  #   --publish=8080:8080/tcp \
-  #   --constraint=node.role==manager \
-  #   --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
-  #   manomarks/visualizer
+  swarm_master service create \
+    --name=viz \
+    --publish=9001:8080/tcp \
+    --constraint=node.role==manager \
+    --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
+    manomarks/visualizer
 
   swarm_master service create \
     --name=portainer \
     --publish=9000:9000/tcp \
     --constraint=node.role==manager \
     --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
-    portainer/portainer
+    portainer/portainer \
+    -H unix:///var/run/docker.sock
+  # --mount=type=bind,src=/data,dst=/data \
 
   # Dsplay the cluster info
   echo "====================="
