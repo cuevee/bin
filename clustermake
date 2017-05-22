@@ -21,6 +21,8 @@ create_machine() {
   docker-machine create \
     -d virtualbox \
     --virtualbox-hostonly-cidr "192.168.99.1/24" \
+		--engine-opt experimental \
+		--engine-opt metrics-addr=0.0.0.0:4999 \
     $1
 }
 
