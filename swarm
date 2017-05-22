@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+docker $(docker-machine config master01) $@
