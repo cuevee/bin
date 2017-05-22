@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
 LIST=0
-if [[ $1 = -l ]]
+UDPATE=0
+
+if [[ $1 = -u ]]
 then
-  LIST=1;
+  UDPATE=1;
   shift;
+else
+	LIST=1;
 fi
 
 for image in `docker images | grep -v REPOSITORY | grep -v "<none>" | awk '{print $1":"$2}'`; do
