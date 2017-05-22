@@ -10,7 +10,7 @@
 # Gist: https://gist.github.com/anonymuse/502e7bf5c7b67bb95a4250cdccbc5125
 
 # Set global environment variables
-workers=${WORKERS:-"node01 node02 node03 node04"}
+workers=${WORKERS:-"node01 node02"}
 master=master01
 swarm_port=2377
 
@@ -96,6 +96,6 @@ main() {
   echo "====================="
   echo "Docker Swarm node status"
   swarm_master node ls
-
 }
+
 main $@
