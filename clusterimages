@@ -2,6 +2,6 @@
 
 set -e 
 
-for node in master node01 node02 node03; do
-  echo $node && docker `docker-machine config $node` images && echo;
+for node in $(docker-machine ls -q); do
+  echo "Image on $node" && docker `docker-machine config $node` images && echo;
 done
