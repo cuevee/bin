@@ -1,0 +1,79 @@
+swarm network create -d overlay monitoring
+
+swarm service create \
+	--detach=false \
+	--name=cadvisor \
+	--network=monitoring \
+	--mode=global \
+	--label=com.docker.stack.namespace=monitoring \
+	--container-label=com.docker.stack.namespace=monitoring \
+	--mount=type=bind,source=/,target=/rootfs:ro \
+	--mount=type=bind,source=/var/run,target=/var/run:rw \
+	--mount=type=bind,source=/sys,target=/sys:ro \
+	--mount=type=bind,source=/var/lib/docker,target=/var/lib/docker:ro \
+	--publish=8080:8080 \
+	google/cadvisor:latest
+
+swarm service create \
+	--detach=false \
+	--name=node-exporter \
+  --mode=global \
+  --network=monitoring \
+  --label=com.docker.stack.namespace=monitoring \
+  --container-label=com.docker.stack.namespace=monitoring \
+  --mount=type=bind,source=/proc,target=/host/proc \
+  --mount=type=bind,source=/sys,target=/host/sys \
+  --mount=type=bind,source=/,target=/rootfs \
+  --mount=type=bind,source=/etc/hostname,target=/etc/host_hostname \
+  -e HOST_HOSTNAME=/etc/host_hostname \
+  prom/node-exporter \
+  -collector.procfs /host/proc \
+  -collector.sysfs /host/sys \
+  -collector.filesystem.ignored-mount-points "^/(sys|proc|dev|host|etc)($|/)" \
+  --collector.textfile.directory /etc/node-exporter/ \
+  --collectors.enabled="conntrack,diskstats,entropy,filefd,filesystem,loadavg,mdadm,meminfo,netdev,netstat,stat,textfile,time,vmstat,ipvs"
+
+swarm service create \
+	--detach=false \
+	--name=alertmanager \
+	--network=monitoring \
+	--label=com.docker.stack.namespace=monitoring \
+	--container-label=com.docker.stack.namespace=monitoring \
+	--constraint=node.role!=manager \
+	--publish=9093:9093 \
+	-e "SLACK_API=https://hooks.slack.com/services/TOKEN-HERE" \
+	prom/alertmanager \
+		-config.file=/etc/alertmanager/config.yml
+
+swarm service create \
+	--detach=false \
+	--name=prometheus \
+	--network=monitoring \
+	--label=com.docker.stack.namespace=monitoring \
+	--container-label=com.docker.stack.namespace=monitoring \
+	--constraint=node.role!=manager \
+	--publish=9090:9090 \
+	prom/prometheus \
+	-config.file=/etc/prometheus/prometheus.yml \
+	-storage.local.path=/prometheus \
+	-web.console.libraries=/etc/prometheus/console_libraries \
+	-web.console.templates=/etc/prometheus/consoles \
+	-alertmanager.url=http://alertmanager:9093
+
+swarm service create \
+	--detach=false \
+  --name=grafana \
+  --network=monitoring \
+  --label=com.docker.stack.namespace=monitoring \
+  --container-label=com.docker.stack.namespace=monitoring \
+	--constraint=node.role!=manager \
+  --publish=3000:3000 \
+  -e "PROMETHEUS_ENDPOINT=http://prometheus:9090" \
+  grafana/grafana
+
+# swarm service create \
+# 	--detach=false \
+#   --name grafana \
+#   --network=monitoring \
+#   --publish=3000:3000 \
+#   grafana/grafana
