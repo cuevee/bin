@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -e
+
+swarm service ls | grep -Ev "viz|portainer" | awk 'NR>1 {print $2}' | xargs swarm service rm
+
+swarm network rm monitoring
