@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+function start() {
+	docker start portainer || create
+}
+
+function clean() {
+	docker ps -a | grep portainer | awk '{print $1}' | xargs docker rm -vf
+}
+
+function create() {
+	clean && \
+		docker run -d \
+		--name=portainer \
+		--publish=9000:9000/tcp \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		portainer/portainer \
+		-H unix:///var/run/docker.sock
+}
+
+start || create
+open http://localhost:9000
