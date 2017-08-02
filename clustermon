@@ -1,3 +1,5 @@
+#!/bin/bash
+
 swarm network create -d overlay monitoring
 
 swarm service create \
