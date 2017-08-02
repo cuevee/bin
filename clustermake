@@ -5,12 +5,9 @@
 # This script is a mirror of the following gist, which is used to
 # populate a Medium story. Unfortunately, there's no way to synchronize all
 # three
-#
-# Medium: https://medium.com/contino-io/docker-kata-005-ac8429082f6c
-# Gist: https://gist.github.com/anonymuse/502e7bf5c7b67bb95a4250cdccbc5125
 
 # Set global environment variables
-workers=${WORKERS:-"node01 node02"}
+workers=${WORKERS:-"node01 node02 node03"}
 master=master01
 swarm_port=2377
 
@@ -21,8 +18,8 @@ create_machine() {
   docker-machine create \
     -d virtualbox \
     --virtualbox-hostonly-cidr "192.168.99.1/24" \
-		--engine-opt experimental \
-		--engine-opt metrics-addr=0.0.0.0:4999 \
+    --engine-opt experimental \
+    --engine-opt metrics-addr=0.0.0.0:9323 \
     $1
 }
 
@@ -71,13 +68,15 @@ main() {
 
   swarm_master service create \
     --name=viz \
+    --detach \
     --publish=9001:8080/tcp \
     --constraint=node.role==manager \
     --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
-    manomarks/visualizer
+		dockersamples/visualizer
 
   swarm_master service create \
     --name=portainer \
+    --detach \
     --publish=9000:9000/tcp \
     --constraint=node.role==manager \
     --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
