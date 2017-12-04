@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+workers=${WORKERS:-"node01 node02 node03"}
+master=master01
+
+for node in $workers $master; do
+  docker-machine stop $node
+done
