@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+
+words = File.readlines('/usr//share/dict/words').map(&:strip).select { |w| w.length < 6 }
+puts words.sample(2).join('_').downcase
