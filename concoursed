@@ -1,0 +1,3 @@
+#!/bin/bash
+
+pushd ~/source/poc/concourse && docker-compose up && popd
